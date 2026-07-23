@@ -72,6 +72,16 @@ def build_parser():
         ),
     )
     search.add_argument(
+        "--format",
+        metavar="FORMAT",
+        help="filter by media format (e.g. LP, BK, DVD)",
+    )
+    search.add_argument(
+        "--sort",
+        metavar="SORT",
+        help="sort results (e.g. newly_acquired, relevance)",
+    )
+    search.add_argument(
         "--pages",
         type=_positive_int,
         default=1,
@@ -102,6 +112,16 @@ def build_parser():
         default="all",
         metavar="MODE",
         help="combine included filters: all or any (default: all)",
+    )
+    advanced.add_argument(
+        "--format",
+        metavar="FORMAT",
+        help="filter by media format (e.g. LP, BK, DVD)",
+    )
+    advanced.add_argument(
+        "--sort",
+        metavar="SORT",
+        help="sort results (e.g. newly_acquired, relevance)",
     )
     advanced.add_argument(
         "--pages",
@@ -149,7 +169,12 @@ def _collect_results(result_pages):
 
 def _run_search(args, environ, input_stream):
     del environ, input_stream
-    search = Search(args.query, _type=args.search_type)
+    search = Search(
+        args.query,
+        _type=args.search_type,
+        format=args.format,
+        sort=args.sort,
+    )
     return _collect_results(search.getResults(pages=args.pages))
 
 
@@ -180,7 +205,12 @@ def _run_advanced_search(args, environ, input_stream):
     filters.update(_parse_filters(args.exclude, "exclude"))
     if not filters:
         raise CLIError("advanced-search requires --include or --exclude")
-    search = AdvancedSearch(exclusive=args.match == "all", **filters)
+    search = AdvancedSearch(
+        exclusive=args.match == "all",
+        format=args.format,
+        sort=args.sort,
+        **filters,
+    )
     return _collect_results(search.getResults(pages=args.pages))
 
 
