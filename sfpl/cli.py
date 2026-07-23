@@ -82,6 +82,12 @@ def build_parser():
         help="sort results (e.g. newly_acquired, relevance)",
     )
     search.add_argument(
+        "--on-order",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="filter by on-order status (--on-order or --no-on-order)",
+    )
+    search.add_argument(
         "--pages",
         type=_positive_int,
         default=1,
@@ -122,6 +128,12 @@ def build_parser():
         "--sort",
         metavar="SORT",
         help="sort results (e.g. newly_acquired, relevance)",
+    )
+    advanced.add_argument(
+        "--on-order",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="filter by on-order status (--on-order or --no-on-order)",
     )
     advanced.add_argument(
         "--pages",
@@ -174,6 +186,7 @@ def _run_search(args, environ, input_stream):
         _type=args.search_type,
         format=args.format,
         sort=args.sort,
+        on_order=args.on_order,
     )
     return _collect_results(search.getResults(pages=args.pages))
 
@@ -209,6 +222,7 @@ def _run_advanced_search(args, environ, input_stream):
         exclusive=args.match == "all",
         format=args.format,
         sort=args.sort,
+        on_order=args.on_order,
         **filters,
     )
     return _collect_results(search.getResults(pages=args.pages))
