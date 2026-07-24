@@ -539,6 +539,48 @@ class Book:
             )["entities"]["catalogBibs"].values()
         )[0]
 
+    def getHoldings(self) -> dict:
+        """Get copy availability and branch holdings for the item.
+
+        Returns:
+            dict: Holdings summary including total/available copies, status, and branch availability.
+        """
+        raw_data = _extract_data(
+            requests.get(
+                "https://sfpl.bibliocommons.com/item/show/{}".format(self._id)
+            ).text
+        )
+        entities = raw_data.get("entities", {})
+        bibs = list(entities.get("bibs", {}).values())
+
+        avail = {}
+        if bibs and "availability" in bibs[0]:
+            avail = bibs[0]["availability"]
+
+        holdings_list = []
+        raw_holdings = entities.get("holdings", {})
+        locations = entities.get("locations", {})
+
+        for h in raw_holdings.values():
+            loc_id = h.get("locationId")
+            loc_name = locations.get(loc_id, {}).get("name", loc_id) if loc_id else None
+            holdings_list.append(
+                {
+                    "location": loc_name,
+                    "status": h.get("status"),
+                    "call_number": h.get("callNumber"),
+                }
+            )
+
+        return {
+            "status": avail.get("status", "UNKNOWN"),
+            "available_copies": avail.get("availableCopies", 0),
+            "total_copies": avail.get("totalCopies", 0),
+            "held_copies": avail.get("heldCopies", 0),
+            "on_order_copies": avail.get("onOrderCopies", 0),
+            "holdings": holdings_list,
+        }
+
     @staticmethod
     def metaDataIdToId(metaDataId):
         """Converts a metadata ID to an ID contained in urls

@@ -150,5 +150,14 @@ class TestScraper(unittest.TestCase):
         self.assertGreater(len(first_page), 0)
 
 
+    def test_get_holdings(self):
+        b = sfpl.Book({"_id": "6046901093", "title": "Sports", "subtitle": "", "author": "Lewis, Huey"})
+        holdings = b.getHoldings()
+        self.assertIn("status", holdings)
+        self.assertIn("available_copies", holdings)
+        self.assertIn("total_copies", holdings)
+        self.assertIn("holdings", holdings)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
