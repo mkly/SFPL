@@ -299,6 +299,14 @@ class CLITest(unittest.TestCase):
                 "description": "A comprehensive python guide.",
             }
         }
+        book_class.return_value.getHoldings.return_value = {
+            "status": "AVAILABLE",
+            "available_copies": 2,
+            "total_copies": 5,
+            "holdings": [
+                {"location": "Main Library", "status": "Available", "call_number": "005.1 PYTH"}
+            ]
+        }
 
         status, stdout, stderr = self.invoke(["details", "12345"])
         self.assertEqual(status, 0)
@@ -309,6 +317,8 @@ class CLITest(unittest.TestCase):
         self.assertIn("Title: Python Programming", stdout)
         self.assertIn("Author: Guido van Rossum", stdout)
         self.assertIn("Description: A comprehensive python guide.", stdout)
+        self.assertIn("Availability: AVAILABLE (2 of 5 available)", stdout)
+        self.assertIn("- Main Library: Available (005.1 PYTH)", stdout)
 
     @mock.patch("sfpl.cli.Search")
     def test_search_with_details_flag(self, search_class):
@@ -321,6 +331,14 @@ class CLITest(unittest.TestCase):
                 }
             }
         )
+        b.getHoldings = mock.MagicMock(
+            return_value={
+                "status": "AVAILABLE",
+                "available_copies": 1,
+                "total_copies": 1,
+                "holdings": []
+            }
+        )
         search_class.return_value.getResults.return_value = iter([[b]])
 
         status, stdout, stderr = self.invoke(["search", "python", "--details"])
@@ -328,6 +346,7 @@ class CLITest(unittest.TestCase):
         self.assertEqual(stderr, "")
         self.assertIn("Python — Author", stdout)
         self.assertIn("Description: Python book description", stdout)
+        self.assertIn("Availability: AVAILABLE (1 of 1 available)", stdout)
 
 
 if __name__ == "__main__":

@@ -255,7 +255,12 @@ def _run_advanced_search(args, environ, input_stream):
 def _run_details(args, environ, input_stream):
     del environ, input_stream
     book = Book({"_id": args.id, "title": "", "subtitle": "", "author": ""})
-    return {"type": "details", "details": book.getDetails()}
+    holdings = None
+    try:
+        holdings = book.getHoldings()
+    except Exception:
+        pass
+    return {"type": "details", "details": book.getDetails(), "holdings": holdings}
 
 
 def _run_branch_hours(args, environ, input_stream):
@@ -284,6 +289,30 @@ def _run_account(args, environ, input_stream):
     if args.account_command == "holds":
         return account.getHolds()
     return account.getCheckouts()
+
+
+def _format_holdings(holdings):
+    if not holdings:
+        return ""
+    lines = []
+    status = holdings.get("status")
+    avail = holdings.get("available_copies", 0)
+    total = holdings.get("total_copies", 0)
+    if status:
+        lines.append("Availability: {} ({} of {} available)".format(status, avail, total))
+
+    branch_holdings = holdings.get("holdings", [])
+    if branch_holdings:
+        lines.append("Holdings:")
+        for h in branch_holdings:
+            loc = h.get("location") or "Unknown Location"
+            h_status = h.get("status") or "Unknown"
+            call_num = h.get("call_number")
+            entry = "  - {}: {}".format(loc, h_status)
+            if call_num:
+                entry += " ({})".format(call_num)
+            lines.append(entry)
+    return "\n".join(lines)
 
 
 def _format_details(details):
@@ -329,6 +358,10 @@ def _text_item(item):
                 formatted = _format_details(details)
                 if formatted:
                     line += "\n" + formatted
+                holdings = item.getHoldings()
+                formatted_h = _format_holdings(holdings)
+                if formatted_h:
+                    line += "\n" + formatted_h
             except Exception:
                 pass
         return line
@@ -344,6 +377,9 @@ def _render(value, stream):
         formatted = _format_details(value["details"])
         if formatted:
             stream.write(formatted + "\n")
+        formatted_h = _format_holdings(value.get("holdings"))
+        if formatted_h:
+            stream.write(formatted_h + "\n")
         return
 
     if isinstance(value, list):
